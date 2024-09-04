@@ -1,70 +1,100 @@
-<p align="center">
-  <a href="https://www.medusajs.com">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/59018053/229103275-b5e482bb-4601-46e6-8142-244f531cebdb.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    <img alt="Medusa logo" src="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    </picture>
-  </a>
-</p>
-<h1 align="center">
-  Medusa
-</h1>
+# Medusa Demo
 
-<h4 align="center">
-  <a href="https://docs.medusajs.com">Documentation</a> |
-  <a href="https://www.medusajs.com">Website</a>
-</h4>
+## Prerequisites
 
-<p align="center">
-  Building blocks for digital commerce
-</p>
-<p align="center">
-  <a href="https://github.com/medusajs/medusa/blob/master/CONTRIBUTING.md">
-    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="PRs welcome!" />
-  </a>
-    <a href="https://www.producthunt.com/posts/medusa"><img src="https://img.shields.io/badge/Product%20Hunt-%231%20Product%20of%20the%20Day-%23DA552E" alt="Product Hunt"></a>
-  <a href="https://discord.gg/xpCwq3Kfn8">
-    <img src="https://img.shields.io/badge/chat-on%20discord-7289DA.svg" alt="Discord Chat" />
-  </a>
-  <a href="https://twitter.com/intent/follow?screen_name=medusajs">
-    <img src="https://img.shields.io/twitter/follow/medusajs.svg?label=Follow%20@medusajs" alt="Follow @medusajs" />
-  </a>
-</p>
+```bash
+sudo dnf in git nodejs postgresql postgresql-contrib postgresql-server
+```
 
-## Compatibility
+## Medusa Setup
 
-This starter is compatible with versions >= 1.8.0 of `@medusajs/medusa`. 
+Install Medusa CLI.
+```bash
+npm install @medusajs/medusa-cli -g
+```
 
-## Getting Started
+Install dependencies.
+```bash
+cd my-medusa-store
+npm install
+```
 
-Visit the [Quickstart Guide](https://docs.medusajs.com/create-medusa-app) to set up a server.
+### Configure Database - Local PostgreSQL DB
 
-Visit the [Docs](https://docs.medusajs.com/development/backend/prepare-environment) to learn more about our system requirements.
+Setup PostgreSQL
 
-## What is Medusa
+```bash
+sudo postgresql-setup initdb
+```
 
-Medusa is a set of commerce modules and tools that allow you to build rich, reliable, and performant commerce applications without reinventing core commerce logic. The modules can be customized and used to build advanced ecommerce stores, marketplaces, or any product that needs foundational commerce primitives. All modules are open-source and freely available on npm.
+Start PostgreSQL
 
-Learn more about [Medusa’s architecture](https://docs.medusajs.com/development/fundamentals/architecture-overview) and [commerce modules](https://docs.medusajs.com/modules/overview) in the Docs.
+```bash
+sudo systemctl enable --now postgresql
+```
 
-## Roadmap, Upgrades & Plugins
+Access the PostgreSQL console to create a new user and database for the Medusa server.
 
-You can view the planned, started and completed features in the [Roadmap discussion](https://github.com/medusajs/medusa/discussions/categories/roadmap).
+```bash
+sudo -u postgres psql
+```
 
-Follow the [Upgrade Guides](https://docs.medusajs.com/upgrade-guides/) to keep your Medusa project up-to-date.
+To create a new user named `medusa_admin` run this command:
 
-Check out all [available Medusa plugins](https://medusajs.com/plugins/).
+```sql
+CREATE USER medusa_admin WITH PASSWORD 'medusa_admin_password';
+```
 
-## Community & Contributions
+Now, create a new database named `medusa_db` and make `medusa_admin` the owner.
 
-The community and core team are available in [GitHub Discussions](https://github.com/medusajs/medusa/discussions), where you can ask for support, discuss roadmap, and share ideas.
+```sql
+CREATE DATABASE medusa_db OWNER medusa_admin;
+```
 
-Join our [Discord server](https://discord.com/invite/medusajs) to meet other community members.
+Last, grant all privileges to `medusa_admin` and exit the PostgreSQL console.
 
-## Other channels
+```sql
+GRANT ALL PRIVILEGES ON DATABASE medusa_db TO medusa_admin;
+```
 
-- [GitHub Issues](https://github.com/medusajs/medusa/issues)
-- [Twitter](https://twitter.com/medusajs)
-- [LinkedIn](https://www.linkedin.com/company/medusajs)
-- [Medusa Blog](https://medusajs.com/blog/)
+```sql
+exit
+```
+
+Replace below line
+```bash
+sudo nano /var/lib/pgsql/data/pg_hba.conf
+```
+```bash
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            indent
+```
+
+Add the connection string as the `DATABASE_URL` to your environment variables. Inside `my-medusa-store` create a `.env` file and add the following:
+
+```
+DATABASE_URL=postgres://medusa_admin:medusa_admin_password@localhost:5432/medusa_db
+```
+
+### Seed Database
+
+Run migrations and seed data to the database by running the following command:
+
+```bash
+medusa seed --seed-file="./data/seed.json"
+```
+
+### Start your Medusa backend
+
+```bash
+medusa develop
+```
+
+The Medusa server will start running on port `7001`.
+
+Test your server:
+```bash
+curl localhost:7001/store/products
+```
+
+Open up your browser and visit [`localhost:7001`](http://localhost:7001) to see the Medusa Admin Dashboard. Use the Email `admin@medusa-test.com` and password `supersecret` to log in.
